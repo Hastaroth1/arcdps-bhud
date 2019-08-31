@@ -9,6 +9,7 @@ use winapi::shared::minwindef::LPVOID;
 
 fn main() -> LPVOID {
     worker::socket::new();
+    worker::pipe::new();
     worker::log::new();
     arcdps::gen_arcdps()
 }

@@ -1,5 +1,8 @@
 use crate::worker::socket;
+use crate::worker::pipe;
 use arcdps_bindings::{cbtevent, Ag};
+use crate::worker::log;
+
 pub fn cbt(
     ev: Option<&cbtevent>,
     src: Option<&Ag>,
@@ -10,8 +13,13 @@ pub fn cbt(
 ) {
     let mut message = Vec::new();
     message.push(2); // indicator for area combat message
-    add_bytes(&mut message, ev, src, dst, skillname, id, revision);
-    socket::send(message);
+
+//    if src.unwrap().self_== 1 && ev.unwrap().buff == 0
+//    {
+        add_bytes(&mut message, ev, src, dst, skillname, id, revision);
+        log::send("cbt\n".into());
+        pipe::send(message);
+//    }
 }
 
 pub fn cbt_local(
@@ -23,9 +31,14 @@ pub fn cbt_local(
     revision: u64,
 ) {
     let mut message = Vec::new();
+
     message.push(3); // indicator for local combat message
-    add_bytes(&mut message, ev, src, dst, skillname, id, revision);
-    socket::send(message);
+//    if src.unwrap().self_== 1 && ev.unwrap().buff == 0
+//    {
+        add_bytes(&mut message, ev, src, dst, skillname, id, revision);
+        log::send("cbt_local\n".into());
+        pipe::send(message);
+//    }
 }
 
 fn add_bytes(

@@ -7,43 +7,43 @@ use std::time::Duration;
 use named_pipe::PipeClient;
 use std::io::Write;
 use crate::worker::log;
-
+use std::str;
 const PIPE_PREFIX: &str = "\\\\.\\pipe\\";
 static NAME: &'static str = "arcdpspipe";
 
 pub fn new() {
-    let action = |active: Arc<AtomicBool>, rx: Receiver<ChannelType>| {
-
+    let action: fn(Arc<AtomicBool>, Receiver<Vec<u8>>) = |active: Arc<AtomicBool>, rx: Receiver<ChannelType>| {
+        log::send("Opening pipe".into());
         let mut client = PipeClient::connect(PIPE_PREFIX.to_string() + NAME);
-        match client.as_mut(){
-            Ok(pipe_client) => {
+        let duration = Duration::new(1, 0);
+        active.store(client.is_ok(), Release);
 
-                log::send("Client Connected\n".into());
-                let duration = Duration::new(1, 0);
-                //active.store(pipeClient), Release);
+        loop {
+            let data_to_send = if active.load(Acquire) {
+                log::send("data_to_Send\n".into());
+                rx.recv().unwrap()
+            } else {
+                log::send("nothing to send\n".into());
+                std::thread::sleep(duration);
+//                client = PipeClient::connect(PIPE_PREFIX.to_string() + NAME);
+//                if client.is_ok() {
+//                    active.store(true, Release);
+//                }
+                continue;
+            };
 
-                loop {
-                    let data_to_send: Vec<u8> = if active.load(Acquire) {
-                        log::send("data_to_Send\n".into());
-                        rx.recv().unwrap()
-                    } else {
-                        log::send("nothing to send\n".into());
-                        std::thread::sleep(duration);
-//                        client = PipeClient::connect(PIPE_PREFIX.to_string() + NAME);
-//                        if client.is_ok() {
-//                            active.store(true, Release);
-//                        }
-                        active.store(true, Release);
-                        continue;
-                    };
+            if client.is_err() {
+                client = PipeClient::connect(PIPE_PREFIX.to_string() + NAME);
+            }
 
-                    log::send("sending data\n".into());
-                    pipe_client.write(data_to_send.as_ref()).expect("could not send data");
-                    pipe_client.flush().expect("could not flush");
-                }
-            },
-            Err(e) => {
-                log::send("failed to open pipe\n".into());
+            if let Ok(pipe_client) = &mut client {
+                active.store(true, Release);
+                let bytes = build_array(data_to_send.as_ref());
+
+                pipe_client.write(bytes.as_ref());
+                pipe_client.flush();
+            } else {
+                active.store(false, Release);
             }
         }
     };

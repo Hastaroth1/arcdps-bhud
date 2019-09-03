@@ -25,10 +25,10 @@ pub fn new() {
             } else {
                 log::send("nothing to send\n".into());
                 std::thread::sleep(duration);
-//                client = PipeClient::connect(PIPE_PREFIX.to_string() + NAME);
-//                if client.is_ok() {
-//                    active.store(true, Release);
-//                }
+                client = PipeClient::connect(PIPE_PREFIX.to_string() + NAME);
+                if client.is_ok() {
+                    active.store(true, Release);
+                }
                 continue;
             };
 

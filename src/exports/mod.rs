@@ -1,10 +1,11 @@
 mod combat;
 
 use crate::worker::socket;
+use crate::worker::pipe;
 use arcdps_bindings::*;
 
 pub fn imgui(not_charsel_or_loading: bool) {
-    socket::send([1, not_charsel_or_loading as u8].to_vec());
+    //pipe::send([1, not_charsel_or_loading as u8].to_vec());
 }
 
 pub fn combat(
